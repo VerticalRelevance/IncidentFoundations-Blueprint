@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Enable SecurityHub.
+Resources:
+  SecurityHub:
+    Type: 'AWS::SecurityHub::Hub'
+    Properties:
+      Tags:
+        key1: value1
+        key2: value2
+Outputs:
+  SecurutyHubArn:
+    Value: !Ref SecurityHub
