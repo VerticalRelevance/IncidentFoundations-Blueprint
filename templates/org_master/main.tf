@@ -34,6 +34,16 @@ resource "aws_securityhub_organization_configuration" "autoenable_sh" {
 }
 
 
+resource "aws_organizations_organization" "iam_aa_enable" {
+  aws_service_access_principals = ["access-analyzer.amazonaws.com"]
+}
+
+resource "aws_accessanalyzer_analyzer" "enable_iam_aa" {
+  depends_on = [aws_organizations_organization.iam_aa_enable]
+
+  analyzer_name = "example"
+  type          = "ORGANIZATION"
+}
 
 
 
