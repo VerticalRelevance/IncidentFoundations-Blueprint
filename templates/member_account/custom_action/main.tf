@@ -1,99 +1,70 @@
-resource "aws_iam_role" "example" {
-  name               = "yak_role"
-  assume_role_policy = data.aws_iam_policy_document.instance_assume_role_policy.json # (not shown)
 
-  inline_policy {
-    name = "my_inline_policy"
-
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action   = ["ec2:Describe*"]
-          Effect   = "Allow"
-          Resource = "*"
-        },
-      ]
-    })
-  }
-
-  inline_policy {
-    name   = "policy-8675309"
-    policy = data.aws_iam_policy_document.inline_policy.json
-  }
+locals {
+  lambda_zip_filename = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
 }
 
-data "aws_iam_policy_document" "inline_policy" {
-  statement {
-    actions   = ["ec2:DescribeAccountAttributes"]
-    resources = ["*"]
+resource "random_id" "lambda_zip_randomizer" {
+  keepers = {
+    lambda_zip = "sgr.zip"
   }
+  byte_length = 8
 }
 
-
-
-
+resource "aws_securityhub_action_target" "remove_action_target" {
+  name        = "remove0rules"
+  identifier  = "remove0rules"
+  description = "Custom action to remove 0.0.0.0/0 rules from a security group"
+}
 
 resource "aws_iam_role" "lambda_role" {
-  name                = "remove_sg_rule_role"
-  assume_role_policy  = data.aws_iam_policy_document.instance_assume_role_policy.json 
-  managed_policy_arns = [aws_iam_policy.policy_one.arn, aws_iam_policy.policy_two.arn]
+  name                = "remove_sg_rule"
+  assume_role_policy  = data.aws_iam_policy_document.lambda_assume_policy.json 
+  inline_policy {
+    name   = "sg_remove_base"
+    policy = data.aws_iam_policy_document.lambda_policy.json
+  }  
 }
 
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/code/sgr.py"
+  output_path = local.lambda_zip_filename
+}
 
-data "aws_iam_policy_document" "lambda_assume_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
+resource "aws_lambda_function" "sg_rule_lambda" {
+  function_name = "sg_rule_removal"
+  filename      = local.lambda_zip_filename
+  source_code_hash = filebase64sha256(local.lambda_zip_filename)
 
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "sgr.lambda_handler"
+
+  runtime = "python3.9"
+
+  environment {
+    variables = {
+      DEBUG = "True"
     }
   }
 }
 
-data "aws_iam_policy_document" "lambda_policy" {
-  statement {
-    sid = "1"
+resource "aws_cloudwatch_event_rule" "sg_lambda_rule" {
+  name        = "remove0rules"
+  description = "Remove 0/0 rules from security groups"
 
-    actions = [
-      "s3:ListAllMyBuckets",
-      "s3:GetBucketLocation",
-    ]
-
-    resources = [
-      "arn:aws:s3:::*",
-    ]
-  }
-
+  event_pattern = <<EOF
+{
+  "source": ["aws.securityhub"],
+  "detail-type": ["Security Hub Findings - Custom Action"],
+  "resources": ["${aws_securityhub_action_target.remove_action_target.arn}"]
+}
+EOF
 }
 
-resource "aws_iam_policy" "policy" {
-  name        = "test_policy"
-  path        = "/"
-  description = "My test policy"
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
-  policy = data.aws_iam_policy_docum  jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "ec2:Describe*",
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role" "lambda_role" {
-  name               = "lambda_sg_rule_remove"
-  path               = "/system/"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume_policy.json
-  managed_policy_arns = [ aws_iam_policy.policy_one.arn, aws_iam_policy.policy_two.arn  ]
+resource "aws_cloudwatch_event_target" "sg_lambda_target" {
+  rule      = aws_cloudwatch_event_rule.sg_lambda_rule.name
+  target_id = "csremove0rule"
+  arn       = aws_lambda_function.sg_rule_lambda.arn
 }
 
 
