@@ -27,4 +27,11 @@ data "aws_iam_policy_document" "lambda_policy" {
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/sg_rule_removal:*"
     ]
   }
+  statement {
+    sid = "ExecutionPermissions"
+    actions = ["ec2:RevokeSecurityGroupIngress",
+               "ec2:RevokeSecurityGroupEgress",
+               "ec2:DescribeSecurityGroups"]
+    resources = ["*"]
+  }
 }

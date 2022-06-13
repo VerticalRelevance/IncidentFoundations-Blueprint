@@ -2,6 +2,7 @@
 locals {
   lambda_function_name = "sg_rule_removal"
   lambda_zip_filename  = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
+  lambda_timeout       = 60
 }
 
 resource "random_id" "lambda_zip_randomizer" {
@@ -36,12 +37,10 @@ resource "aws_lambda_function" "sg_rule_lambda" {
   function_name = local.lambda_function_name
   filename      = local.lambda_zip_filename
   source_code_hash = filebase64sha256(local.lambda_zip_filename)
-
   role          = aws_iam_role.lambda_role.arn
   handler       = "sgr.lambda_handler"
-
   runtime = "python3.9"
-
+  timeout = local.lambda_timeout
   environment {
     variables = {
       DEBUG = "True"
