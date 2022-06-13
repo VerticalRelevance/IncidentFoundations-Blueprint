@@ -1,6 +1,7 @@
 
 locals {
-  lambda_zip_filename = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
+  lambda_function_name = "sg_rule_removal"
+  lambda_zip_filename  = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
 }
 
 resource "random_id" "lambda_zip_randomizer" {
@@ -17,7 +18,7 @@ resource "aws_securityhub_action_target" "remove_action_target" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name                = "remove_sg_rule"
+  name                = "${local.lambda_function_name}_role"
   assume_role_policy  = data.aws_iam_policy_document.lambda_assume_policy.json 
   inline_policy {
     name   = "sg_remove_base"
@@ -32,7 +33,7 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "sg_rule_lambda" {
-  function_name = "sg_rule_removal"
+  function_name = local.lambda_function_name
   filename      = local.lambda_zip_filename
   source_code_hash = filebase64sha256(local.lambda_zip_filename)
 
@@ -63,8 +64,14 @@ EOF
 
 resource "aws_cloudwatch_event_target" "sg_lambda_target" {
   rule      = aws_cloudwatch_event_rule.sg_lambda_rule.name
-  target_id = "csremove0rule"
+  target_id = "remove0rules"
   arn       = aws_lambda_function.sg_rule_lambda.arn
 }
 
-
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "allow_eventbridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sg_rule_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.sg_lambda_rule.arn
+}

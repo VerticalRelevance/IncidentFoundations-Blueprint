@@ -17,14 +17,14 @@ data "aws_iam_policy_document" "lambda_policy" {
   statement {
     sid = "LogGroupCreation"
     actions = ["logs:CreateLogGroup"]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"]
   }
   statement {
     sid = "StreamEvents"
     actions = ["logs:CreateLogStream",
                "logs:PutLogEvents"]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/remove0rules:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/sg_rule_removal:*"
     ]
   }
 }
