@@ -43,7 +43,9 @@ resource "aws_lambda_function" "sg_rule_lambda" {
   timeout = local.lambda_timeout
   environment {
     variables = {
-      DEBUG = "True"
+      DEBUG = "False"
+      DIRECTION = "both"
+      CIDR = "0.0.0.0/0,12.13.14.15/32"
     }
   }
 }
