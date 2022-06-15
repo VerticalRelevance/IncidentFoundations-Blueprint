@@ -37,13 +37,15 @@ logging.getLogger('urllib3').setLevel(logging.ERROR)
 def lambda_handler(event, context):
     """
     Function called by AWS Lambda on invocation.
+    :param event: dict- AWS lambda input event
+    :param context: obj- aws lambda input context object
+    :return: dict- standard lambda status return dictionary
     """
     LOG.debug("Event: %s", str(event))
     LOG.debug("Starting main function")
 
     return_object = ""
-    # Catch all exceptions so they can be returned in the lambda
-    # response JSON
+    # Catch all exceptions so they can be returned by lambda
     try:
         return_object = main(event)
         status_code = 200
@@ -63,8 +65,8 @@ def main(event):
     Main entrypoint for the module.  Takes in the eventbridge finding event for security hub
     and discovers the security groups contained within.  Calls the remove_rule function for each
     security group found.
-    :param event:
-    :return:
+    :param event: dict- aws lambda handler input event
+    :return:dict- dictionary containing information about removed rules
     """
     # Check environment variables for values for direction and rule CIDRS
     if "DIRECTION" in os.environ:
@@ -94,7 +96,6 @@ def main(event):
                 "ec2",
                 region_name=resource_info["region"]
             )
-
         removed_rules = remove_rule(
             boto_resource=boto_resource_dict[resource_info["region"]],
             sg_id=resource,
@@ -112,12 +113,11 @@ def remove_rule(boto_resource, sg_id, cidr_list, direction):
     """
     Removes rules contaiing the CIDR range(s) contained in the cidr_list input parameter.
     :param boto_resource: boto3 ec2 resource object (used for creating sg resource objets)
-    :param sg_id: id of the security group to act upon
-    :param cidr_list: list of CIDRS to look for in the security group
-    :param direction: the flow direction of rules to remove (ingress/egress/both)
-    :return:
+    :param sg_id: str- id of the security group to act upon
+    :param cidr_list: list- list of CIDRS to look for in the security group
+    :param direction: str- the flow direction of rules to remove (ingress/egress/both)
+    :return: list- list containing information about rules removed from the security group
     """
-
     valid_directions = ["ingress", "egress", "both"]
     if direction not in valid_directions:
         raise ValueError("Invalid direction parameter %s. Must be one of %s" %\
@@ -159,8 +159,8 @@ def event_parser(event):
     Parses the event passed in to the Lambda and returns a dictionary containing the security
     group IDs as keys and a dictionary containing their region and account as a value. It expects
     that the incoming event is from an eventbridge rule configured for Security Hub custom actions.
-    :param event: eventbrindge finding event
-    :return: dictionary containing security groups from the input event
+    :param event: dict- eventbrindge finding event
+    :return: dict- security groups contained within the input event
     """
     return_dict = {}
     for finding in event["detail"]["findings"]:
@@ -169,7 +169,6 @@ def event_parser(event):
                 LOG.debug("Resource is not type %s", RESOURCE_TYPE)
                 continue
 
-            # Add SGs to output dictionary. SG id as key.
             return_dict[resource["Details"][RESOURCE_TYPE]["GroupId"]] = \
                 {"account_id": finding["AwsAccountId"],
                  "region": finding["Region"]}

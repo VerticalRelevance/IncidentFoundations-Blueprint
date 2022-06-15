@@ -1,6 +1,7 @@
 
 locals {
-  lambda_function_name = "sg_rule_removal"
+  action_name          = "remove0rules"
+  lambda_name          = "sg_rule_removal"
   lambda_zip_filename  = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
   lambda_timeout       = 60
 }
@@ -9,17 +10,17 @@ resource "random_id" "lambda_zip_randomizer" {
   keepers = {
     lambda_zip = "sgr.zip"
   }
-  byte_length = 8
+  byte_length = 12
 }
 
 resource "aws_securityhub_action_target" "remove_action_target" {
-  name        = "remove0rules"
-  identifier  = "remove0rules"
+  name        = local.action_name
+  identifier  = local.action_name
   description = "Custom action to remove 0.0.0.0/0 rules from a security group"
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name                = "${local.lambda_function_name}_role"
+  name                = "${local.lambda_name}_role"
   assume_role_policy  = data.aws_iam_policy_document.lambda_assume_policy.json 
   inline_policy {
     name   = "sg_remove_base"
@@ -34,7 +35,7 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "sg_rule_lambda" {
-  function_name = local.lambda_function_name
+  function_name = local.lambda_name
   filename      = local.lambda_zip_filename
   source_code_hash = filebase64sha256(local.lambda_zip_filename)
   role          = aws_iam_role.lambda_role.arn
@@ -44,14 +45,12 @@ resource "aws_lambda_function" "sg_rule_lambda" {
   environment {
     variables = {
       DEBUG = "False"
-      DIRECTION = "both"
-      CIDR = "0.0.0.0/0,12.13.14.15/32"
     }
   }
 }
 
 resource "aws_cloudwatch_event_rule" "sg_lambda_rule" {
-  name        = "remove0rules"
+  name        = local.action_name
   description = "Remove 0/0 rules from security groups"
 
   event_pattern = <<EOF
@@ -65,7 +64,7 @@ EOF
 
 resource "aws_cloudwatch_event_target" "sg_lambda_target" {
   rule      = aws_cloudwatch_event_rule.sg_lambda_rule.name
-  target_id = "remove0rules"
+  target_id = local.action_name
   arn       = aws_lambda_function.sg_rule_lambda.arn
 }
 
