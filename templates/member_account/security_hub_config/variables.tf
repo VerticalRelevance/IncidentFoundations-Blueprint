@@ -1,12 +1,47 @@
-variable "regions" {
-  type        = list(string)
-  description = "List of regions where Security Hub will be enabled (Use 'friendly' names.)"
-  nullable    = false
+variable "enable_default" {
+  type        = bool
+  description = "Enable aggregation of findings to the default region for credentials used"
+  default     = false
 }
 
-#variable "aggregate_region" {
-#  type        = string
-#  description = "Aggregation region for Security Hub findings. (Use 'friendly' names.)"
-#  default     = "virginia"
-#  nullable    = false
-#}
+variable "enable_aggregation" {
+  type        = bool
+  description = "Enable aggregation of findings to the default region for credentials used"
+  default     = false
+}
+
+variable "us-east-1" {
+  type        = bool
+  description = "Enable Security Hub in the us-east-1 region"
+  default     = false
+}
+
+variable "us-east-2" {
+  type        = bool
+  description = "Enable Security Hub in the us-east-2 region"
+  default     = false
+}
+
+variable "us-west-1" {
+  type        = bool
+  description = "Enable Security Hub in the us-west-1 region"
+  default     = false
+}
+
+variable "us-west-2" {
+  type        = bool
+  description = "Enable Security Hub in the us-west-2 region"
+  default     = false
+}
+
+variable "ap-south-1" {
+  type        = bool
+  description = "Enable Security Hub in the ap-south-1 region"
+  default     = false
+}
+
+variable "ca-central-1" {
+  type        = bool
+  description = "Enable Security Hub in the ca-central-1 region"
+  default     = false
+}
