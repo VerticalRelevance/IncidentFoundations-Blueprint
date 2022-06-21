@@ -1,6 +1,6 @@
 variable "enable_default" {
   type        = bool
-  description = "Enable aggregation of findings to the default region for credentials used"
+  description = "Enable Security Hub in the default region credentials"
   default     = false
 }
 

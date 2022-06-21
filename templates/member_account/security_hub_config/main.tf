@@ -1,8 +1,9 @@
 
 # Terraform doesn't let you specify providers dynamically so have to
-# have a module entry for each region.  Using a subset of US regions
+# have a call for each region.  Using a subset of US regions
 # and ap-south-1 and ca-central-1 as a baseline.
 module "enable_default_region" {
+  count = var.enable_default ? 1 : 0
   source    = "./modules/sh_enable"
 }
 
@@ -54,7 +55,7 @@ module "enable_ca-central-1" {
   }
 }
 
-# Sets up region aggregation for SH
+# Sets up the default region as the SH aggregation region
 resource "aws_securityhub_finding_aggregator" "sh_aggregator" {
   count = var.enable_aggregation ? 1 : 0
   linking_mode = "ALL_REGIONS"

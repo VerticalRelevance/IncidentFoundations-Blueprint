@@ -35,3 +35,9 @@ data "aws_iam_policy_document" "lambda_policy" {
     resources = ["*"]
   }
 }
+
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/code/sgr.py"
+  output_path = local.lambda_zip_filename
+}

@@ -28,12 +28,6 @@ resource "aws_iam_role" "lambda_role" {
   }  
 }
 
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_file = "${path.module}/code/sgr.py"
-  output_path = local.lambda_zip_filename
-}
-
 resource "aws_lambda_function" "sg_rule_lambda" {
   function_name = local.lambda_name
   filename      = local.lambda_zip_filename
