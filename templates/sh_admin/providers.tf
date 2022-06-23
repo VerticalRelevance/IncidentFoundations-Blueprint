@@ -1,9 +1,6 @@
-provider "aws" {
-  alias = "default"
-}
+# A provider must be defined for every region where SH is going to be enabled
 
 provider "aws" {
-  alias = "us-east-1"
   region = "us-east-1"
 }
 
@@ -20,14 +17,4 @@ provider "aws" {
 provider "aws" {
   alias = "us-west-2"
   region = "us-west-2"
-}
-
-provider "aws" {
-  alias = "ap-south-1"
-  region = "ap-south-1"
-}
-
-provider "aws" {
-  alias = "ca-central-1"
-  region = "ca-central-1"
 }

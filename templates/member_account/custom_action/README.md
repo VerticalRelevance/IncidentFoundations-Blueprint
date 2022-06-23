@@ -21,6 +21,7 @@ and Lambda execution.
 - main.tf  - Defines main resources for Terraform stack 
 - output.tf  - Defines output for Terraform stack
 - providers.tf  - Defines the AWS provider for the Terraform stack
+- README.md - This file
 - variables.tf - Defines the variables for the Terraform stack
 - version.tf - Contains the Terraform and provider version requirements
 
@@ -51,3 +52,35 @@ the version to 1.2.2 or higher.
 
 
 ### Use
+1. The security engineer logs in to the AWS console and switches to the region where all Security Hub findings are aggregated.
+   - Either in findings or insights,  they look for EC2.19 findings that are in FAILED compliance status. 
+   - The findings are analyzed.  Findings linked to security groups that need to be altered are selected. 
+   - The engineer selects the “remove0rules” action from the  actions dropdown menu. A message at the top of the console will indicate that the findings have been sent to CloudwatchEvents.   
+
+
+2. Security Hub creates one or more new Cloudwatch event(s) that contains the information about the findings to be remedied.
+
+3. The EventBridge rule is triggered by the Security Hub event(s) 
+
+4. The EventBridge rule triggers the configured lambda target, passing in the finding information as an event. 
+
+5. The sg_remove_rule lambda starts 
+   - The event is parsed and the ID of the associated security groups, their region and account ID is pulled out. 
+
+   - The rules for each of the security groups discovered in 5.1 are parsed.  Any ingress or egress rules that contain  0.0.0.0/0 are removed from the security group. 
+
+The next time Security Hub performs the check on the SG resource it will find the offending rules have been removed and 
+the finding status will be updated. 
+
+The behavior of sg_remove_rule can be modified by updating the DIRECTION and CIDR 
+environment variables used by the lambda function.  This can be done by adding these to the lambda resource definition 
+in main.tf. 
+
+Valid values for DIRECTION are
+- ingress 
+- egress 
+- both 
+
+The value of CIDR is a comma separated string.  Each substring must be a valid CIDR range.   
+
+ 
