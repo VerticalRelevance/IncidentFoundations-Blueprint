@@ -1,6 +1,7 @@
 # A provider must be defined for every region where SH is going to be enabled
 
 provider "aws" {
+  alias = "us-east-1"
   region = "us-east-1"
 }
 
