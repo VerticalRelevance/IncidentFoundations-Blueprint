@@ -5,6 +5,6 @@ data "aws_caller_identity" "current" {}
 data "terraform_remote_state" "org_master" {
   backend = "local"
   config = {
-    path = "../org_master/terraform.tfstate"
+    path = var.org_master_state_location
   }
 }

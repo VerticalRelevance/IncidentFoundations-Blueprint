@@ -1,6 +1,8 @@
-# This example sets all existing org accounts as members for SH.  SH in the admin account
-# will already have been enabled for all US regions through the ../org_master by designating
-# SH hub account as admin for those regions
+# This template is meant to be run using credentials from the Security Hub Admin account.
+# It adds all organization accounts as SH member accounts under control of this admin account.
+# Member account IDs are loaded from the state created when running the ../org_master templates.
+# Security Hub will already be enabled in the SH admin account through the ../org_master template
+# when the account is designated as the SH admin for the US regions.
 
 # Sets up the us-east-1 region as the SH aggregation region
 resource "aws_securityhub_finding_aggregator" "sh_aggregator" {
