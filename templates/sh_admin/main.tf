@@ -45,3 +45,67 @@ module "enable_us-west-2" {
   }
   sh_member_accounts = data.terraform_remote_state.org_master.outputs.org_accounts
 }
+
+# AWS GuardDuty Setup
+module "enable_gd_us-east-1" {
+  count = var.enable_guardduty ? 1 : 0
+  source    = "./modules/gd_enable"
+  providers = {
+    aws = aws.us-east-1
+  }
+  member_accounts = data.terraform_remote_state.org_master.outputs.org_accounts
+}
+
+module "enable_gd_us-east-2" {
+  count = var.enable_guardduty ? 1 : 0
+  source    = "./modules/gd_enable"
+  providers = {
+    aws = aws.us-east-2
+  }
+  member_accounts = data.terraform_remote_state.org_master.outputs.org_accounts
+}
+module "enable_gd_us-west-1" {
+  count = var.enable_guardduty ? 1 : 0
+  source    = "./modules/gd_enable"
+  providers = {
+    aws = aws.us-west-1
+  }
+  member_accounts = data.terraform_remote_state.org_master.outputs.org_accounts
+}
+module "enable_gd_us-west-2" {
+  count = var.enable_guardduty ? 1 : 0
+  source    = "./modules/gd_enable"
+  providers = {
+    aws = aws.us-west-2
+  }
+  member_accounts = data.terraform_remote_state.org_master.outputs.org_accounts
+}
+
+# AWS Access Analyzer Setup
+resource "aws_accessanalyzer_analyzer" "aa_us-east-1" {
+  count = var.enable_accessanalyzer ? 1 : 0
+  provider = aws.us-east-1
+  analyzer_name = "Main-us-east-1"
+  type          = "ORGANIZATION"
+}
+
+resource "aws_accessanalyzer_analyzer" "aa_us-east-2" {
+  count = var.enable_accessanalyzer ? 1 : 0
+  provider = aws.us-east-2
+  analyzer_name = "Main-us-east-2"
+  type          = "ORGANIZATION"
+}
+
+resource "aws_accessanalyzer_analyzer" "aa_us-west-1" {
+  count = var.enable_accessanalyzer ? 1 : 0
+  provider = aws.us-west-1
+  analyzer_name = "Main-us-west-1"
+  type          = "ORGANIZATION"
+}
+
+resource "aws_accessanalyzer_analyzer" "aa_us-west-2" {
+  count = var.enable_accessanalyzer ? 1 : 0
+  provider = aws.us-west-2
+  analyzer_name = "Main-us-west-2"
+  type          = "ORGANIZATION"
+}
