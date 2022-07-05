@@ -1,0 +1,10 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Basic enabling of Incident Manager"
+Resources:
+  IRRepSet:
+    Type: AWS::SSMIncidents::ReplicationSet
+    Properties:
+      Regions:
+        - "us-east-1"
+        - "us-east-2"
+        - "us-west-2"

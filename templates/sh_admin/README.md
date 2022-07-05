@@ -2,11 +2,13 @@
 ## 6/15/2022
 
 ### Description
-This repo contains all artifacts required to enable Security Hub in one or more region. 
+This repo contains all artifacts required to enable Security Hub, GuardDuty and
+Access Analyzer through the organization centralized security account.
 
 
 ### Repo Content
 - modules/sh_enable - Terraform module that enables Security Hub for a single region
+- modules/gd_enable - Terraform module that enables GuardDuty for a single region
 - data.tf  - Defines data objects for Terraform stack
 - main.tf  - Defines main resources for Terraform stack 
 - output.tf  - Defines output for Terraform stack
@@ -44,3 +46,4 @@ the version to 1.2.2 or higher.
 6. Apply the plan.
    #### terraform apply [PLAN FILENAME]
 
+### Details

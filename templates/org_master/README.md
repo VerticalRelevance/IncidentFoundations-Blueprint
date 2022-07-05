@@ -67,3 +67,11 @@ Once these templates successfully run the templates in the sh_admin directory
 can be run in the central security account to complete the setup of these
 services for the organization.
 
+### Relationship to sh_admin Templates
+As part of enabling services in the centralized security account, resources
+are made to add all existing organization member accounts to the service.  The
+IDs of all member accounts can be queried from an API call, but it needs to be
+made in the org master account.  To simplify credential usage in sh_admin a 
+data object is created and data exported in this org_master template. The
+sh_admin templates assume a local path based on the directory hierarchy in 
+the repo.
