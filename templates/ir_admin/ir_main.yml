@@ -1,10 +1,20 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Basic enabling of Incident Manager"
+Parameters:
+  KeyArn:
+    Type: String
+    Description: ARN of the KMS key to use for incident encryption
 Resources:
   IRRepSet:
     Type: AWS::SSMIncidents::ReplicationSet
     Properties:
       Regions:
-        - "us-east-1"
-        - "us-east-2"
-        - "us-west-2"
+        - RegionName: "us-east-1"
+          RegionConfiguration :
+            SseKmsKeyId: !Ref KeyArn
+        - RegionName: "us-east-2"
+          RegionConfiguration :
+            SseKmsKeyId: !Ref KeyArn
+        - RegionName: "us-west-2"
+          RegionConfiguration :
+            SseKmsKeyId: !Ref KeyArn
