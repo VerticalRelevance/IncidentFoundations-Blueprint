@@ -13,8 +13,8 @@ import boto3
 
 
 SOURCE_TYPE = "aws.securityhub"
-ASSUME_ROLE = ""
-
+ASSUME_ROLE = "ca_router_ca_role"
+AGGREGATION_REGION = "us-east-1"
 
 LOG_LEVEL = logging.INFO
 if "DEBUG" in os.environ and os.environ["DEBUG"].lower() == "true":
@@ -73,20 +73,24 @@ def main(event):
 
     event_info = event_parser(event)
 
-    invoke_lambda(
-        account=event_info["account_id"],
-        region=event_info["region"],
-        action_name=event_info["action_name"],
-        event=event
-    )
+    for account in event_info["accounts"]:
+        invoke_lambda(
+            account=account,
+            region=AGGREGATION_REGION,
+            action_name=event_info["action_name"],
+            event=event
+        )
 
 
 def event_parser(event):
-    return {
+    return_dict = {
         "action_name": event["detail"]["actionName"],
-        "account_id": event["account"],
-        "region": event["region"]
+        "accounts": set()
     }
+    for finding in event["detail"]["findings"]:
+        return_dict["accounts"].add(finding["AwsAccountId"])
+
+    return return_dict
 
 
 def invoke_lambda(account, region, action_name, event):
@@ -94,9 +98,10 @@ def invoke_lambda(account, region, action_name, event):
 
     response = lambda_client.invoke(
         FunctionName=action_name,
-        InvocationType='Event', # async
-        Payload= event
+        InvocationType='Event', # async=Event sync=RequestResponse
+        Payload= json.dumps(event)
     )
+    LOG.info(response)
 
 
 def get_client(client_type, account=None, region=None, assume_role_name=None):

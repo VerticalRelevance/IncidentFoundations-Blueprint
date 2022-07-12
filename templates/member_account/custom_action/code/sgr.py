@@ -53,7 +53,7 @@ def lambda_handler(event, context):
     except Exception:
         status_code = 500
         return_object = {"exception": str(traceback.format_exc())}
-        LOG.error(return_message)
+        LOG.error(return_object)
 
     return {'statusCode': status_code,
             'body': json.dumps(return_object)

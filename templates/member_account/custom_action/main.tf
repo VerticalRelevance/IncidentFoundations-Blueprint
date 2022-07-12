@@ -1,7 +1,7 @@
 
 locals {
   action_name          = "remove0rules"
-  lambda_name          = "sg_rule_removal"
+  lambda_name          = "remove0rules"
   lambda_zip_filename  = "${path.module}/${random_id.lambda_zip_randomizer.keepers.lambda_zip}"
   lambda_timeout       = 60
 }
@@ -69,3 +69,13 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.sg_lambda_rule.arn
 }
+
+resource "aws_lambda_permission" "allow_ca_router_role" {
+  statement_id  = "allow_ca_router_role"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sg_rule_lambda.function_name
+  principal     = data.aws_caller_identity.current.account_id
+  source_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ca_router_ca_role"
+}
+
+

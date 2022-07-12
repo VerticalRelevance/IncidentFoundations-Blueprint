@@ -41,6 +41,10 @@ data "aws_iam_policy_document" "lambda_policy" {
                "ec2:DescribeSecurityGroups"]
     resources = ["*"]
   }
+  statement {
+    actions = ["sts:AssumeRole"]
+    resources = ["*"]
+  }
 }
 
 data "archive_file" "lambda_zip" {

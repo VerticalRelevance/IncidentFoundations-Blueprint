@@ -24,7 +24,7 @@ data "aws_iam_policy_document" "lambda_policy" {
     actions = ["logs:CreateLogStream",
                "logs:PutLogEvents"]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/sg_rule_removal:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.lambda_name}:*"
     ]
   }
   statement {
