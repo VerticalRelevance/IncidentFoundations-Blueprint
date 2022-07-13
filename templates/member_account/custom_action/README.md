@@ -1,12 +1,11 @@
-# Security Hub Custom Action 0.0.0.0/0 Rule Removal
+# Security Hub Custom Action - 0.0.0.0/0 Rule Removal
 ## 6/15/2022
 
 ### Description
-This repo contains all artifacts required to create a AWS Security Hub custom 
-action backed by a lambda function using Terraform.  This custom action is 
-intended for use on AWS Foundational Security Best Practices EC2.19 findings 
-to remove all 0.0.0.0/0 rules from a security group.  The solution contains 
-the following high level AWS resources.
+This repo contains all artifacts required to create a lambda based AWS Security Hub custom 
+action using Terraform.  This custom action is intended for use on AWS Foundational 
+Security Best Practices EC2.19 findings to remove all 0.0.0.0/0 rules from a security group.  
+The solution contains the following high level AWS resources.
 
 - Security Hub Custom Action
 - EventBridge Rule for the Custom Action
@@ -15,7 +14,19 @@ the following high level AWS resources.
 See the main.tf template for the additional resources required for EventBridge
 and Lambda execution.
 
+The underlying lambda code is region aware and only gets deployed to a single region. This
+example solution expects us-east-1 is used even though the lambda will operate the same no 
+matter which region it is deployed.
+
+This is designed for use with the Centralized Security (CS) account design which is part of the
+larger IR solution.  This design leverages a common cross account role, ca_router_ca_role, that 
+is created as part of the account provisioning process of all member accounts and is used to 
+invoke all CA lambdas.  Both EventBridge and this common role are granted invocation permissions 
+for the remediation lambda.
+
 ### Repo Content
+Note: Some of the below .tf files may be empty but are still included so that all
+Terraform projects in this contain the same base set of files.
 - /code/sgr.py - Python module used in the auto-remediation lambda
 - data.tf  - Defines data objects for Terraform stack
 - main.tf  - Defines main resources for Terraform stack 
@@ -52,11 +63,11 @@ the version to 1.2.2 or higher.
 
 
 ### Use
-1. The security engineer logs in to the AWS console and switches to the region where all Security Hub findings are aggregated.
+1. The security engineer logs in to the AWS console in the Centralized Security account or member
+   account and switches to the region where all Security Hub findings are aggregated.
    - Either in findings or insights,  they look for EC2.19 findings that are in FAILED compliance status. 
    - The findings are analyzed.  Findings linked to security groups that need to be altered are selected. 
    - The engineer selects the “remove0rules” action from the  actions dropdown menu. A message at the top of the console will indicate that the findings have been sent to CloudwatchEvents.   
-
 
 2. Security Hub creates one or more new Cloudwatch event(s) that contains the information about the findings to be remedied.
 
@@ -64,7 +75,10 @@ the version to 1.2.2 or higher.
 
 4. The EventBridge rule triggers the configured lambda target, passing in the finding information as an event. 
 
-5. The sg_remove_rule lambda starts 
+Note: If invoked from the CS account the CA routing lambda will be what triggers and 
+passes the finding information to the target lambda.
+
+5. The remove0rules lambda starts 
    - The event is parsed and the ID of the associated security groups, their region and account ID is pulled out. 
 
    - The rules for each of the security groups discovered in 5.1 are parsed.  Any ingress or egress rules that contain  0.0.0.0/0 are removed from the security group. 
@@ -72,10 +86,10 @@ the version to 1.2.2 or higher.
 The next time Security Hub performs the check on the SG resource it will find the offending rules have been removed and 
 the finding status will be updated. 
 
-The behavior of sg_remove_rule can be modified by updating the DIRECTION and CIDR 
-environment variables used by the lambda function.  This can be done by adding these to the lambda resource definition 
-in main.tf. 
 
+Note: The behavior of remove0rules can be modified by updating the DIRECTION and CIDR 
+environment variables used by the lambda function.  This can be done by adding these to the lambda resource definition 
+in main.tf.
 Valid values for DIRECTION are
 - ingress 
 - egress 
@@ -83,4 +97,7 @@ Valid values for DIRECTION are
 
 The value of CIDR is a comma separated string.  Each substring must be a valid CIDR range.   
 
+Due to the manner in which the larger solution's CA routing functionality operates, if these values
+need to be updated to support a new use case a new and uniquely named custom action and 
+remediation lambda should be created using the python code here.
  

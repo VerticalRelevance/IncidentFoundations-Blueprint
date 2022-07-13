@@ -4,10 +4,12 @@
 ### Description
 This repo contains all artifacts required to configure an AWS organization
 to use a centralized security account for the aggregation and management 
-of security findings using native AWS services. It enables this functionality
-for the four US regions.
+of security findings using native AWS services. This example operates on the
+four US regions. (us-east-1, us-east-2, us-west-1, us-west-2)
 
 ### Repo Content
+Note: Some of the below .tf files may be empty but are still included so that all
+Terraform projects in this contain the same base set of files.
 - data.tf  - Defines data objects for Terraform stack
 - main.tf  - Defines main resources for Terraform stack 
 - output.tf  - Defines output for Terraform stack
@@ -45,33 +47,36 @@ the version to 1.2.2 or higher.
 
 ### Details
 The goal of these templates is to enable Security Hub, GuardDuty and Access
-Analyzer to be enabled and managed via a designated central security account
-for the Organization.  In order for this to happen a few prerequisites must be met.
+Analyzer as organization level managed services and to set the centralized security account as
+the administrator account for the organization. The below prerequisites must be met before
+attempting to run these templates.
 
 #### Prerequisites
-1. Security Hub, GuardDuty and Access Analyzer must be enabled as AWS Organization managed services
+1. A centralized security account must be created within the Organization
+2. Security Hub, GuardDuty and Access Analyzer must be enabled as AWS Organization managed services
    1. For Security Hub and GuardDuty AWS recommends doing this through the AWS Organizations console
-   2. Access Analyzer should be enabled via the Access Analyzer console in the master account
-      by delegating the centralized security account as the delegated admin.
-2. A centralized security account must be created within the Organization
+   2. Enabling Access Analyzer should be done through the Access Analyzer console 
+      in the master account by delegating the centralized security account as the 
+      delegated admin.
 
-For Security Hub, the central account is made a delegated administrator for both
-the Security Hub and GuardDuty services.  As stated above, for Access Analyzer 
-this needs to be done manually through the console.
+For Security Hub, the centralized security account is made a delegated administrator for both
+the Security Hub and GuardDuty services.  As stated above, the centralized security account
+is made a delegated admin for Access Analyzer manually through the IAM AA console.
 
-For the four US regions, the central security account is designated as the
+For the four US regions, the centralized security account is designated as the
 administrator account for Security Hub and GuardDuty.  At the time of writing
 Access Analyzer doesn't require an admin account be designated.
 
-Once these templates successfully run the templates in the sh_admin directory
-can be run in the central security account to complete the setup of these
+The Terraform templates here take care of all the org level configuration for GuardDury and
+Security Hub. Once these templates successfully run the templates in the ../sh_admin directory
+can be run in the centralized security account to complete the setup of these
 services for the organization.
 
 ### Relationship to sh_admin Templates
 As part of enabling services in the centralized security account, resources
-are made to add all existing organization member accounts to the service.  The
-IDs of all member accounts can be queried from an API call, but it needs to be
-made in the org master account.  To simplify credential usage in sh_admin a 
-data object is created and data exported in this org_master template. The
-sh_admin templates assume a local path based on the directory hierarchy in 
-the repo.
+are made to add all existing organization member accounts to the services.  The
+IDs of all member accounts can be queried from an API call, but only when run in the 
+org master account.  To simplify credential usage in sh_admin, these templates add an output data 
+object containing a map of the member accounts at execution time. The sh_admin templates import 
+this map and use the values to add the member accounts as "managed by" to the services.  It 
+assumes that the path to the org_master state file matches that in the repo (ie ../org_master)
