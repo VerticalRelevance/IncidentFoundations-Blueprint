@@ -21,8 +21,12 @@ resource "aws_iam_role" "lambda_role" {
   name                = "${var.action_name}_role"
   assume_role_policy  = data.aws_iam_policy_document.lambda_assume_policy.json 
   inline_policy {
+    name   = "default_lambda_permissions"
+    policy = data.aws_iam_policy_document.default_lambda_policy.json
+  }
+  inline_policy {
     name   = "${var.action_name}_base"
-    policy = file("${path.module}/remediations/${var.action_name}/${var.policy_name}")
+    policy = file("remediations/${var.action_name}/${var.policy_name}")
   }  
 }
 
@@ -32,7 +36,7 @@ resource "aws_lambda_function" "ca_lambda" {
   source_code_hash = filebase64sha256(local.lambda_zip_filename)
   role          = aws_iam_role.lambda_role.arn
   handler       = "${var.action_name}.lambda_handler"
-  runtime = yamldecode(file("${path.module}/remediations/${var.action_name}/config.yml"))["runtime"]
+  runtime = yamldecode(file("remediations/${var.action_name}/config.yml"))["runtime"]
   timeout = local.lambda_timeout
   environment {
     variables = {
