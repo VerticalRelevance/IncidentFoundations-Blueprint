@@ -1,0 +1,1 @@
+# Handles management of resources in the delegated admin account

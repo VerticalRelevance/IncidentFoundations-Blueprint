@@ -1,0 +1,1 @@
+# Handles the management of resources in the organization master account
