@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploys the custom resource used by the incident response solution
+Parameters:
+  LambdaZipBucket:
+    Type:  String
+
+  LambdaZipKey:
+    Type: String
+    Default: ir_manager.zip
+
+  LambdaHandler:
+    Type: String
+    Default: ir_setup.lambda_handler
+
+  LambdaTimeout:
+    Type: Number
+    Default: 60
+
+  CRFunctionName:
+    Type: String
+    Default: IRCustomResource
+
+  CRFunctionRuntime:
+    Type: String
+    Default: python3.10
+    AllowedValues:
+      - python3.10
+
+  AdminAccountId:
+    Type: String
+    Description: AWS account ID of the account that will be the delegated admin for IR services
+
+  AggregateRegion:
+    Type: String
+    Description: "Aggregation region for all services"
+    Default: "us-east-1"
+
+  EnableForManager:
+    Type: String
+    Description: Enable IR services for the org managerment account True/False
+    Default: True
+    AllowedValues:
+    - True
+    - False
+
+  SHEnableRegions:
+    Type: CommaDelimitedList
+    Description: Regions that should be enabled for security hub
+
+
+  GDEnableRegions:
+    Type: CommaDelimitedList
+    Description: Regions that should be enabled for guard duty
+
+  INEnableRegions:
+    Type: CommaDelimitedList
+    Description: Regions that should be enabled for inspector
+
+Resources:
+  CRSecurityHub:
+    Type: Custom::SecurityHub
+    DependsOn: CRLambda
+    Properties:
+      ServiceToken: !GetAtt CRLambda.Arn
+      sh__admin_account_id: !Ref AdminAccountId
+      sh__aggregate_region: !Ref AggregateRegion
+      sh__enable_for_management: !Ref EnableForManager
+      sh__enable_regions: !Ref SHEnableRegions
+
+  CRGuardDuty:
+    Type: Custom::GuardDuty
+    DependsOn: CRSecurityHub
+    Properties:
+      ServiceToken: !GetAtt CRLambda.Arn
+      gd__admin_account_id: !Ref AdminAccountId
+      gd__enable_regions: !Ref GDEnableRegions
+
+  CRInspector:
+    Type: Custom::Inspector
+    DependsOn: CRSecurityHub
+    Properties:
+      ServiceToken: !GetAtt CRLambda.Arn
+      in__admin_account_id: !Ref AdminAccountId
+      in__enable_regions: !Ref INEnableRegions
+
+  CRLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref CRFunctionName
+      Description: "Custom resource used to configure org and org services for the incident response solution"
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaZipBucket
+        S3Key: !Ref LambdaZipKey
+      Handler: !Ref LambdaHandler
+      PackageType: Zip
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.10
+      Timeout: !Ref LambdaTimeout
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: IRCRLambda
+      Description: "Role used by lambda CR function"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+      Policies:
+        - PolicyName: IRCR
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${CRFunctionName}:*
+            - Effect: Allow
+              Action: logs:CreateLogGroup
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+              - sts:AssumeRole
+              Resource:
+              - arn:aws:iam::*:role/OrganizationAccountAccessRole
+            - Effect: Allow
+              Action:
+              - iam:CreateServiceLinkedRole
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - securityhub:EnableOrganizationAdminAccount
+              - securityhub:DisableOrganizationAdminAccount
+              - securityhub:EnableSecurityHub
+              - securityhub:DisableSecurityHub
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - organizations:RegisterDelegatedAdministrator
+              - organizations:DeregisterDelegatedAdministrator
+              - organizations:EnableAWSServiceAccess
+              - organizations:DisableAWSServiceAccess
+              - organizations:DescribeOrganization
+              - organizations:ListDelegatedServicesForAccount
+              - organizations:ListAccounts
+              - organizations:ListDelegatedAdministrators
+              - organizations:ListAWSServiceAccessForOrganization
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - account:ListRegions
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - guardduty:EnableOrganizationAdminAccount
+              - guardduty:DisableOrganizationAdminAccount
+              - guardduty:UpdateOrganizationConfiguration
+              - guardduty:DescribeOrganizationConfiguration
+              - guardduty:ListOrganizationAdminAccounts
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - inspector2:EnableDelegatedAdminAccount
+              - inspector2:DisableDelegatedAdminAccount
+              - inspector2:AssociateMember
+              - inspector2:DisassociateMember
+              - inspector2:UpdateOrganizationConfiguration
+              Resource: "*"
